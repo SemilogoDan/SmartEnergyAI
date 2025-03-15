@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Semilogo Personal Smart Energy Budgeting</title>
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Chart.js for Visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 80%;
+            margin: auto;
+            padding-top: 50px;
+            text-align: center;
+        }
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-top: 30px;
+        }
+        h1 {
+            color: #333;
+        }
+        #price {
+            font-size: 24px;
+            color: #2c3e50;
+            margin-top: 20px;
+        }
+        button {
+            padding: 15px 30px;
+            font-size: 18px;
+            background-color: #2ecc71; /* Green button */
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px; /* Space between icon and text */
+        }
+        button:hover {
+            background-color: #27ae60; /* Darker green on hover */
+        }
+        button i {
+            color: white; /* White icons on green buttons */
+        }
+        #history {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #ecf0f1;
+            border-radius: 8px;
+            display: none;
+        }
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid #ccc;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        /* Icon Styling */
+        i {
+            font-size: 20px;
+            color: #2ecc71; /* Green icons (standalone) */
+        }
+        /* Hover effect for standalone icons */
+        i:hover {
+            color: #27ae60; /* Darker green on hover */
+        }
+        /* Chart Styling */
+        canvas {
+            max-width: 100%;
+            height: auto;
+            margin: 20px auto;
+        }
+        .chart-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-top: 30px;
+        }
+        /* Input Field Styling */
+        .input-group {
+            margin: 20px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .input-group label {
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+        .input-group input {
+            padding: 10px;
+            width: 200px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        /* Success Message Styling */
+        #saveMessage {
+            color: green;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        /* Machine Status Styling */
+        #machineStatus {
+            font-size: 18px;
+            margin-top: 20px;
+            color: #333;
+        }
+        /* Warning Message Styling */
+        #warningMessage {
+            color: red;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        /* Budget Modal Styling */
+        #budgetModal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+        #budgetModal .input-group {
+            margin: 10px 0;
+        }
+        #budgetModal button {
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><i class="fa-solid fa-bolt"></i> Semilogo Personal Smart Energy Budgeting</h1>
+        <div class="card">
+            <p><i class="fa-solid fa-lightbulb"></i> Stay on top of your energy consumption with real-time price updates!</p>
+
+            <!-- User Input Fields -->
+            <div class="input-group">
+                <label for="dailyConsumption"><i class="fa-solid fa-battery-full"></i> Daily Energy Consumption (kWh):</label>
+                <input type="number" id="dailyConsumption" value="2" min="1" />
+            </div>
+            <div class="input-group">
+                <label for="dailyBudget"><i class="fa-solid fa-coins"></i> Daily Budget (€):</label>
+                <input type="number" id="dailyBudget" value="1" min="0" />
+            </div>
+            <div class="input-group">
+                <label for="monthlyBudget"><i class="fa-solid fa-wallet"></i> Monthly Budget (€):</label>
+                <input type="number" id="monthlyBudget" value="10" min="0" />
+            </div>
+
+            <!-- Save Settings Button -->
+            <button onclick="saveSettings()"><i class="fa-solid fa-save"></i> Save Settings</button>
+            <div id="saveMessage"></div>
+
+            <div id="price"><i class="fa-solid fa-coins"></i> Current Electricity Price: €0.23/kWh</div>
+            <button onclick="fetchPrice()"><i class="fa-solid fa-sync"></i> Get Current Price</button>
+
+            <!-- Estimated Costs Section -->
+            <div id="costs" style="margin-top: 20px;">
+                <p><i class="fa-solid fa-calculator"></i> Estimated Costs:</p>
+                <p id="dailyCost">Daily Cost: €0.46</p>
+                <p id="monthlyCost">Monthly Cost: €13.80</p>
+            </div>
+
+            <!-- Alerts -->
+            <div id="alerts" style="color: red; margin-top: 20px;">
+                <p>⚠️ Your estimated monthly cost has exceeded your monthly budget of €10.00!</p>
+            </div>
+
+            <!-- Machine Control Section -->
+            <div style="margin-top: 30px;">
+                <button id="machineButton" onclick="toggleMachine()"><i class="fa-solid fa-power-off"></i> Start Machine</button>
+                <div id="machineStatus">Machine is stopped.</div>
+                <div id="warningMessage"></div>
+            </div>
+
+            <!-- Emergency Stop Button -->
+            <div style="margin-top: 30px;">
+                <button id="emergencyStopButton" onclick="emergencyStop()" style="background-color: #e74c3c;">
+                    <i class="fa-solid fa-triangle-exclamation"></i> Emergency Stop
+                </button>
+            </div>
+        </div>
+
+        <!-- Price history control buttons -->
+        <div>
+            <button onclick="toggleHistoryVisibility()"><i class="fa-solid fa-eye"></i> View/Hide Price History</button>
+            <button onclick="resetHistory()"><i class="fa-solid fa-trash"></i> Reset History</button>
+        </div>
+
+        <div id="history">
+            <h3><i class="fa-solid fa-clock-rotate-left"></i> Price History</h3>
+            <table id="historyTable">
+                <thead>
+                    <tr>
+                        <th><i class="fa-solid fa-calendar"></i> Timestamp</th>
+                        <th><i class="fa-solid fa-coins"></i> Price (€ per kWh)</th>
+                    </tr>
+                </thead>
+                <tbody id="historyList">
+                    <!-- Price history will be displayed here -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- View/Hide Chart Button -->
+        <div>
+            <button onclick="toggleChartVisibility()"><i class="fa-solid fa-eye"></i> View/Hide Chart</button>
+        </div>
+
+        <!-- Chart Container -->
+        <div class="chart-container" id="chartContainer">
+            <h3><i class="fa-solid fa-chart-line"></i> Price Trend</h3>
+            <canvas id="priceChart" width="800" height="400"></canvas>
+        </div>
+
+        <!-- View/Hide Suggestions Button -->
+        <div>
+            <button onclick="toggleSuggestionsVisibility()"><i class="fa-solid fa-eye"></i> View/Hide Suggestions</button>
+        </div>
+
+        <!-- Energy Savings Suggestions -->
+        <div class="card" id="suggestionsContainer" style="margin-top: 30px;">
+            <h3><i class="fa-solid fa-lightbulb"></i> Energy Savings Suggestions</h3>
+            <p>Use energy during these times to maximize savings:</p>
+            <ul id="savingsSuggestions">
+                <!-- Suggestions will be displayed here -->
+            </ul>
+            <button onclick="fetchEnergySuggestions()"><i class="fa-solid fa-bolt"></i> Get Suggestions</button>
+        </div>
+
+        <!-- Budget Adjustment Modal -->
+        <div id="budgetModal" class="modal">
+            <h3>Upgrade Your Budget</h3>
+            <p>To start the machine, please increase your daily or monthly budget.</p>
+            <div class="input-group">
+                <label for="newDailyBudget">New Daily Budget (€):</label>
+                <input type="number" id="newDailyBudget" value="0" min="0" />
+            </div>
+            <div class="input-group">
+                <label for="newMonthlyBudget">New Monthly Budget (€):</label>
+                <input type="number" id="newMonthlyBudget" value="0" min="0" />
+            </div>
+            <button onclick="updateBudgetAndStart()">Update Budget and Start Machine</button>
+            <button onclick="closeBudgetModal()">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+        // Global Variables
+        let priceHistoryData = [];
+        let machineRunning = false; // Tracks whether the machine is running
+        let emergencyStopActive = false; // Tracks whether the emergency stop is active
+
+        // Load user settings from local storage
+        const dailyConsumptionInput = document.getElementById('dailyConsumption');
+        const dailyBudgetInput = document.getElementById('dailyBudget');
+        const monthlyBudgetInput = document.getElementById('monthlyBudget');
+
+        if (localStorage.getItem('dailyConsumption')) {
+            dailyConsumptionInput.value = localStorage.getItem('dailyConsumption');
+        }
+        if (localStorage.getItem('dailyBudget')) {
+            dailyBudgetInput.value = localStorage.getItem('dailyBudget');
+        }
+        if (localStorage.getItem('monthlyBudget')) {
+            monthlyBudgetInput.value = localStorage.getItem('monthlyBudget');
+        }
+
+        // Save Settings Function
+        async function saveSettings() {
+            const dailyConsumption = document.getElementById('dailyConsumption').value;
+            const dailyBudget = document.getElementById('dailyBudget').value;
+            const monthlyBudget = document.getElementById('monthlyBudget').value;
+
+            // Send data to the backend
+            const response = await fetch('/api/save_budget', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    dailyConsumption: parseFloat(dailyConsumption),
+                    dailyBudget: parseFloat(dailyBudget),
+                    monthlyBudget: parseFloat(monthlyBudget)
+                })
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                document.getElementById('saveMessage').innerText = 'Settings saved successfully!';
+            } else {
+                document.getElementById('saveMessage').innerText = 'Failed to save settings.';
+            }
+        }
+
+        // Load Settings Function
+        async function loadSettings() {
+            const response = await fetch('/api/get_budget');
+            const data = await response.json();
+
+            if (data.dailyConsumption) {
+                document.getElementById('dailyConsumption').value = data.dailyConsumption;
+                document.getElementById('dailyBudget').value = data.dailyBudget;
+                document.getElementById('monthlyBudget').value = data.monthlyBudget;
+            }
+        }
+
+        // Fetch Price Function
+        async function fetchPrice() {
+            let response = await fetch("/api/get_price");
+            let data = await response.json();
+            const currentPrice = data.price;
+
+            // Update Price Display
+            document.getElementById("price").innerText = "Current Electricity Price: €" + currentPrice + "/kWh";
+
+            // Get user-defined values
+            const dailyConsumption = parseFloat(dailyConsumptionInput.value);
+            const dailyBudget = parseFloat(dailyBudgetInput.value);
+            const monthlyBudget = parseFloat(monthlyBudgetInput.value);
+
+            // Calculate Estimated Costs
+            const dailyCost = currentPrice * dailyConsumption;
+            const monthlyCost = dailyCost * 30;
+
+            document.getElementById("dailyCost").innerText = `Daily Cost: €${dailyCost.toFixed(2)}`;
+            document.getElementById("monthlyCost").innerText = `Monthly Cost: €${monthlyCost.toFixed(2)}`;
+
+            // Check Budget Thresholds
+            const alertsDiv = document.getElementById('alerts');
+            alertsDiv.innerHTML = ''; // Clear previous alerts
+
+            if (dailyCost > dailyBudget) {
+                alertsDiv.innerHTML += `<p>⚠️ Your estimated daily cost has exceeded your daily budget of €${dailyBudget.toFixed(2)}!</p>`;
+            }
+            if (monthlyCost > monthlyBudget) {
+                alertsDiv.innerHTML += `<p>⚠️ Your estimated monthly cost has exceeded your monthly budget of €${monthlyBudget.toFixed(2)}!</p>`;
+            }
+
+            // Add to History and Chart
+            let date = new Date();
+            let options = { 
+                day: '2-digit', 
+                month: 'long', 
+                year: 'numeric', 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                second: '2-digit', 
+                hour12: false 
+            };
+            let formattedDate = new Intl.DateTimeFormat('en-GB', options).format(date);
+
+            addToHistoryTable(formattedDate, currentPrice);
+            updateChart(formattedDate, currentPrice);
+        }
+
+        // Add to History Table
+        function addToHistoryTable(timestamp, price) {
+            let historyList = document.getElementById("historyList");
+
+            let row = document.createElement("tr");
+            let timestampCell = document.createElement("td");
+            timestampCell.textContent = timestamp;
+            row.appendChild(timestampCell);
+
+            let priceCell = document.createElement("td");
+            priceCell.textContent = "€" + price + "/kWh";
+            row.appendChild(priceCell);
+
+            historyList.appendChild(row);
+        }
+
+        // Toggle History Visibility
+        function toggleHistoryVisibility() {
+            const historyDiv = document.getElementById("history");
+
+            if (historyDiv.style.display === "none" || historyDiv.style.display === "") {
+                historyDiv.style.display = "block";
+            } else {
+                historyDiv.style.display = "none";
+            }
+        }
+
+        // Reset History
+        async function resetHistory() {
+            let response = await fetch("/api/reset_history", { method: "POST" });
+            let data = await response.json();
+
+            if (data.success) {
+                document.getElementById("historyList").innerHTML = ""; // Clear UI table
+                alert("History has been reset!");
+            } else {
+                alert("Failed to reset history.");
+            }
+        }
+
+        // Chart Initialization
+        const ctx = document.getElementById('priceChart').getContext('2d');
+        const priceChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [], // Timestamps
+                datasets: [{
+                    label: 'Electricity Price (€/kWh)',
+                    data: [], // Prices
+                    borderColor: '#2ecc71',
+                    backgroundColor: 'rgba(46, 204, 113, 0.2)',
+                    borderWidth: 2,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: true
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Time'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Price (€/kWh)'
+                        },
+                        beginAtZero: false
+                    }
+                }
+            }
+        });
+
+        // Update Chart with New Data
+        function updateChart(timestamp, price) {
+            priceChart.data.labels.push(timestamp);
+            priceChart.data.datasets[0].data.push(price);
+
+            // Limit the chart to show only the last 10 entries
+            if (priceChart.data.labels.length > 10) {
+                priceChart.data.labels.shift();
+                priceChart.data.datasets[0].data.shift();
+            }
+
+            priceChart.update();
+        }
+
+        // Machine Control Functionality
+        function toggleMachine() {
+            const machineButton = document.getElementById('machineButton');
+            const machineStatus = document.getElementById('machineStatus');
+            const warningMessage = document.getElementById('warningMessage');
+
+            // Get user-defined values
+            const dailyBudget = parseFloat(dailyBudgetInput.value);
+            const monthlyBudget = parseFloat(monthlyBudgetInput.value);
+
+            // Get current costs
+            const currentPrice = parseFloat(document.getElementById("price").innerText.split("€")[1].split("/")[0]);
+            const dailyConsumption = parseFloat(dailyConsumptionInput.value);
+            const dailyCost = currentPrice * dailyConsumption;
+            const monthlyCost = dailyCost * 30;
+
+            // Check if budgets are exceeded
+            if ((dailyCost > dailyBudget || monthlyCost > monthlyBudget) && !machineRunning) {
+                const confirmStart = confirm(`⚠️ Warning: Your daily/monthly budget has been exceeded. Are you sure you want to start the machine?`);
+                if (!confirmStart) {
+                    return; // Prevent starting the machine
+                }
+
+                // Show the budget adjustment modal
+                document.getElementById('budgetModal').style.display = 'block';
+                return; // Prevent starting the machine until budget is updated
+            }
+
+            // Toggle machine state
+            if (machineRunning) {
+                // Stop the machine
+                machineRunning = false;
+                machineButton.innerText = 'Start Machine';
+                machineButton.style.backgroundColor = '#2ecc71'; // Green for start
+                machineStatus.innerText = 'Machine is stopped.';
+                machineStatus.style.color = '#333'; // Neutral color
+                warningMessage.innerText = ''; // Clear warning
+            } else {
+                // Start the machine
+                machineRunning = true;
+                machineButton.innerText = 'Stop Machine';
+                machineButton.style.backgroundColor = '#e74c3c'; // Red for stop
+                machineStatus.innerText = 'Machine is now running.';
+                machineStatus.style.color = '#2ecc71'; // Green for active
+                warningMessage.innerText = ''; // Clear warning
+            }
+        }
+
+        // Emergency Stop Function
+        function emergencyStop() {
+            const machineButton = document.getElementById('machineButton');
+            const machineStatus = document.getElementById('machineStatus');
+            const warningMessage = document.getElementById('warningMessage');
+
+            // Toggle emergency stop state
+            emergencyStopActive = !emergencyStopActive;
+
+            if (emergencyStopActive) {
+                // Activate emergency stop
+                machineRunning = false;
+                machineButton.innerText = 'Start Machine';
+                machineButton.style.backgroundColor = '#2ecc71'; // Green for start
+                machineStatus.innerText = 'Machine is stopped (Emergency).';
+                machineStatus.style.color = '#333'; // Neutral color
+                warningMessage.innerText = 'Machine stopped due to emergency.';
+                alert('Emergency stop activated! Machine has been stopped.');
+            } else {
+                // Deactivate emergency stop
+                machineStatus.innerText = 'Machine is stopped.';
+                warningMessage.innerText = '';
+                alert('Emergency stop deactivated. Machine can now resume normal operation.');
+                // Resume automatic toggling
+                autoToggleMachine();
+            }
+        }
+
+        // Function to fetch and display energy-saving suggestions
+// Function to fetch and display energy-saving suggestions
+async function fetchEnergySuggestions() {
+    try {
+        const response = await fetch('/api/predict_energy_needs');
+        const data = await response.json();
+
+        const suggestionsList = document.getElementById('savingsSuggestions');
+        suggestionsList.innerHTML = ''; // Clear previous suggestions
+
+        if (data.suggestions && data.suggestions.length > 0) {
+            data.suggestions.forEach(suggestion => {
+                const listItem = document.createElement('li');
+                listItem.innerHTML = `
+                    <strong>${suggestion.timestamp}</strong>: €${suggestion.price.toFixed(2)}/kWh
+                `;
+                suggestionsList.appendChild(listItem);
+            });
+        } else {
+            suggestionsList.innerHTML = '<li>No suggestions available.</li>';
+        }
+    } catch (error) {
+        console.error('Error fetching suggestions:', error);
+        const suggestionsList = document.getElementById('savingsSuggestions');
+        suggestionsList.innerHTML = '<li>Failed to fetch suggestions. Please try again later.</li>';
+    }
+}
+
+        // Toggle Chart Visibility
+        function toggleChartVisibility() {
+            const chartContainer = document.getElementById('chartContainer');
+            if (chartContainer.style.display === "none" || chartContainer.style.display === "") {
+                chartContainer.style.display = "block";
+            } else {
+                chartContainer.style.display = "none";
+            }
+        }
+
+        // Toggle Suggestions Visibility
+        function toggleSuggestionsVisibility() {
+            const suggestionsContainer = document.getElementById('suggestionsContainer');
+            if (suggestionsContainer.style.display === "none" || suggestionsContainer.style.display === "") {
+                suggestionsContainer.style.display = "block";
+            } else {
+                suggestionsContainer.style.display = "none";
+            }
+        }
+
+        // Function to update budget and start machine
+        async function updateBudgetAndStart() {
+            const newDailyBudget = parseFloat(document.getElementById('newDailyBudget').value);
+            const newMonthlyBudget = parseFloat(document.getElementById('newMonthlyBudget').value);
+
+            if (isNaN(newDailyBudget) || isNaN(newMonthlyBudget) || newDailyBudget < 0 || newMonthlyBudget < 0) {
+                alert('Please enter valid budget values.');
+                return;
+            }
+
+            // Update the budget inputs
+            dailyBudgetInput.value = newDailyBudget;
+            monthlyBudgetInput.value = newMonthlyBudget;
+
+            // Save the updated budget
+            await saveSettings();
+
+            // Close the budget modal
+            closeBudgetModal();
+
+            // Fetch the updated price and costs
+            await fetchPrice();
+
+            // Start the machine if budgets are not exceeded
+            await autoToggleMachine();
+        }
+
+        // Function to close the budget modal
+        function closeBudgetModal() {
+            document.getElementById('budgetModal').style.display = 'none';
+        }
+
+        // Initial Fetch and Interval
+        setInterval(fetchPrice, 10000);  // Update every 10 seconds
+        fetchPrice();  // Initial fetch
+        loadSettings();  // Load saved settings
+
+       // Function to automatically toggle the machine based on budget
+async function autoToggleMachine() {
+    const machineButton = document.getElementById('machineButton');
+    const machineStatus = document.getElementById('machineStatus');
+    const warningMessage = document.getElementById('warningMessage');
+
+    // Fetch the current price and calculate costs
+    const response = await fetch('/api/get_price');
+    const data = await response.json();
+    const currentPrice = data.price;
+
+    // Get user-defined values
+    const dailyConsumption = parseFloat(dailyConsumptionInput.value);
+    const dailyBudget = parseFloat(dailyBudgetInput.value);
+    const monthlyBudget = parseFloat(monthlyBudgetInput.value);
+
+    // Calculate daily and monthly costs
+    const dailyCost = currentPrice * dailyConsumption;
+    const monthlyCost = dailyCost * 30;
+
+    // Check if budgets are exceeded
+    const dailyExceeded = dailyCost > dailyBudget;
+    const monthlyExceeded = monthlyCost > monthlyBudget;
+
+    // Toggle machine state based on budget and emergency stop
+    if (!emergencyStopActive) {
+        if (!dailyExceeded && !monthlyExceeded && !machineRunning) {
+            // Start the machine if budgets are not exceeded
+            machineRunning = true;
+            machineButton.innerText = 'Stop Machine';
+            machineButton.style.backgroundColor = '#e74c3c'; // Red for stop
+            machineStatus.innerText = 'Machine is now running.';
+            machineStatus.style.color = '#2ecc71'; // Green for active
+            warningMessage.innerText = '';
+            console.log('Machine started automatically: Budgets are within limits.');
+        } else if ((dailyExceeded || monthlyExceeded) && machineRunning) {
+            // Stop the machine if budgets are exceeded
+            machineRunning = false;
+            machineButton.innerText = 'Start Machine';
+            machineButton.style.backgroundColor = '#2ecc71'; // Green for start
+            machineStatus.innerText = 'Machine is stopped.';
+            machineStatus.style.color = '#333'; // Neutral color
+            warningMessage.innerText = 'Machine stopped automatically due to budget constraints.';
+            console.log('Machine stopped automatically: Budgets exceeded.');
+        }
+    } else {
+        // Emergency stop is active, do not toggle the machine
+        console.log('Emergency stop is active. Machine cannot be toggled.');
+    }
+}
+
+// Periodically check and toggle the machine
+setInterval(autoToggleMachine, 5000);  // Check every 5 seconds
+    </script>
+</body>
+</html>
