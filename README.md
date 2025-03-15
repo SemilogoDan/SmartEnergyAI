@@ -12,7 +12,7 @@ This project is built using **Flask** for the backend and **HTML/CSS/JavaScript*
 
 Here’s a quick demo of  Personal Smart Energy Budgeting  in action:
 
-![Demo GIF](https://i.imgur.com/0mNf4z4.gif)
+![Screenshot](SmartEnergyAI.gif)
 
 The GIF showcases the following features:
 - Fetching real-time electricity prices.
