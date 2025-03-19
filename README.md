@@ -12,7 +12,7 @@ This project is built using **Flask** for the backend and **HTML/CSS/JavaScript*
 
 Here’s a quick demo of  Personal Smart Energy Budgeting  in action:
 
-![Screenshot](SmartEnergyAI.gif)
+![Screenshot](Energy Budget Management  Prediction2.gif)
 
 The Demo showcases the following features:
 - Fetching real-time electricity prices.
