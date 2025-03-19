@@ -14,7 +14,7 @@ Here’s a quick demo of  Personal Smart Energy Budgeting  in action:
 
 ![Screenshot](SmartEnergyAI.gif)
 
-The GIF showcases the following features:
+The Demo showcases the following features:
 - Fetching real-time electricity prices.
 - Automatically toggling the machine based on budget constraints.
 - Viewing energy-saving suggestions and price trends.
